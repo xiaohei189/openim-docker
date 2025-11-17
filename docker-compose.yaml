@@ -6,6 +6,8 @@ services:
   mongo:
     image: "${MONGO_IMAGE}"
     container_name: mongo
+    ports:
+      - "27017:27017"  # 映射到主机端口
     command: >
       bash -c '
       docker-entrypoint.sh mongod --wiredTigerCacheSizeGB $$wiredTigerCacheSizeGB --auth &
@@ -50,6 +52,8 @@ services:
   redis:
     image: "${REDIS_IMAGE}"
     container_name: redis
+    ports:
+      - "16379:6379"  # 映射到主机端口 16379
     volumes:
       - "${DATA_DIR}/components/redis/data:/data"
       - "${DATA_DIR}/components/redis/config/redis.conf:/usr/local/redis/config/redis.conf"
@@ -337,18 +341,28 @@ services:
       - "--web.listen-address=:${NODE_EXPORTER_PORT}"
     network_mode: host
 
+  # openim-server: 使用本地源码（用于调试）
+  # 原镜像方式已注释，改为使用 golang 镜像 + 本地源码挂载
   openim-server:
-    image: ${OPENIM_SERVER_IMAGE}
+    # image: ${OPENIM_SERVER_IMAGE}  # 注释掉镜像
+    image: golang:1.22  # 使用 golang 基础镜像
     container_name: openim-server
     init: true
     ports:
       - "${OPENIM_MSG_GATEWAY_PORT}:10001"
       - "${OPENIM_API_PORT}:10002"
-    healthcheck:
-      test: ["CMD", "sh", "-c", "mage check"]
-      interval: 5s
-      timeout: 60s
-      retries: 10
+      - "40000:40000"  # Delve 调试端口
+    volumes:
+      # 挂载本地源码
+      - C:/Users/11456/workspace/open-im-server:/app/open-im-server
+      - C:/Users/11456/workspace/protocol:/app/protocol
+    working_dir: /app/open-im-server
+    # 移除 healthcheck 避免干扰调试
+    # healthcheck:
+    #   test: ["CMD", "sh", "-c", "mage check"]
+    #   interval: 5s
+    #   timeout: 60s
+    #   retries: 10
     environment:
       - IMENV_MONGODB_ADDRESS=${MONGO_ADDRESS}
       - IMENV_MONGODB_USERNAME=${MONGO_USERNAME}
@@ -369,7 +383,24 @@ services:
       - IMENV_LOG_ISSTDOUT=${LOG_IS_STDOUT}
       - IMENV_LOG_REMAINLOGLEVEL=${LOG_LEVEL}
       - IMENV_OPENIM_API_PROMETHEUS_GRAFANAURL=${GRAFANA_URL}
-    restart: always
+      - CGO_ENABLED=0  # 禁用 CGO 简化编译
+    # 启动命令：安装依赖并运行
+    command: >
+      sh -c "
+      echo '=== Installing Go dependencies ===' &&
+      go mod download &&
+      echo '=== Building openim-server ===' &&
+      go build -o /app/openim-server-bin ./cmd/openim-msggateway &&
+      echo '=== Starting openim-server ===' &&
+      /app/openim-server-bin
+      "
+    # 或者使用 mage 启动全部服务
+    # command: >
+    #   sh -c "
+    #   go install github.com/magefile/mage@latest &&
+    #   mage start
+    #   "
+    restart: on-failure
     depends_on:
       - mongo
       - redis
@@ -379,15 +410,27 @@ services:
     networks:
       - openim
 
+  # openim-chat: 使用本地源码（用于调试）
   openim-chat:
-    image: ${OPENIM_CHAT_IMAGE}
+    # image: ${OPENIM_CHAT_IMAGE}  # 注释掉镜像
+    image: golang:1.22
     container_name: openim-chat
     init: true
-    healthcheck:
-      test: ["CMD", "sh", "-c", "mage check"]
-      interval: 5s
-      timeout: 60s
-      retries: 10
+    ports:
+      - "${CHAT_API_PORT}:10008"
+      - "${ADMIN_API_PORT}:10009"
+      - "40001:40001"  # Delve 调试端口
+    volumes:
+      # 挂载本地源码
+      - C:/Users/11456/workspace/chat:/app/chat
+      - C:/Users/11456/workspace/protocol:/app/protocol
+    working_dir: /app/chat
+    # 移除 healthcheck
+    # healthcheck:
+    #   test: ["CMD", "sh", "-c", "mage check"]
+    #   interval: 5s
+    #   timeout: 60s
+    #   retries: 10
     environment:
       - CHATENV_MONGODB_ADDRESS=${MONGO_ADDRESS}
       - CHATENV_MONGODB_USERNAME=${MONGO_USERNAME}
@@ -401,10 +444,17 @@ services:
       - CHATENV_SHARE_OPENIM_APIURL=${API_URL}
       - CHATENV_LOG_ISSTDOUT=${LOG_IS_STDOUT}
       - CHATENV_LOG_REMAINLOGLEVEL=${LOG_LEVEL}
-    ports:
-      - "${CHAT_API_PORT}:10008"
-      - "${ADMIN_API_PORT}:10009"
-    restart: always
+      - CGO_ENABLED=0
+    command: >
+      sh -c "
+      echo '=== Installing Go dependencies ===' &&
+      go mod download &&
+      echo '=== Building openim-chat ===' &&
+      go build -o /app/chat-api ./cmd/chat-api &&
+      echo '=== Starting openim-chat ===' &&
+      /app/chat-api
+      "
+    restart: on-failure
     depends_on:
       - mongo
       - redis
