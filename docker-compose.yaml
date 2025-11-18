@@ -176,6 +176,8 @@ services:
     container_name: kafka
     user: root
     restart: always
+    ports:
+      - "19094:9094"  # 映射 EXTERNAL 监听器到主机端口 19094
     volumes:
       - "${DATA_DIR}/components/kafka:/bitnami/kafka"
     environment:
@@ -204,9 +206,9 @@ services:
       KAFKA_CFG_LISTENERS: "INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094"
       # Addresses advertised to clients. INTERNAL://kafka:9092 uses the internal Docker service name 'kafka',
       # so other containers can access Kafka via kafka:9092.
-      # EXTERNAL://localhost:19094 is the address external clients (e.g., in the LAN) should use to connect.
-      # If Kafka is deployed on a different machine than IM, 'localhost'(or 'kafka') should be replaced with the LAN IP.
-      KAFKA_CFG_ADVERTISED_LISTENERS: "INTERNAL://kafka:9092,EXTERNAL://kafka:9094"
+      # EXTERNAL://127.0.0.1:19094 is the address external clients (e.g., in the LAN) should use to connect.
+      # If Kafka is deployed on a different machine than IM, '127.0.0.1'(or 'kafka') should be replaced with the LAN IP.
+      KAFKA_CFG_ADVERTISED_LISTENERS: "INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:19094"
       # Maps logical listener names to actual protocols.
       # Supported protocols include: PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT"
@@ -224,7 +226,7 @@ services:
           
           # Set environment variables for SASL authentication
           export KAFKA_CFG_LISTENERS="SASL_PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094"
-          export KAFKA_CFG_ADVERTISED_LISTENERS="SASL_PLAINTEXT://kafka:9092,EXTERNAL://kafka:9094"
+          export KAFKA_CFG_ADVERTISED_LISTENERS="SASL_PLAINTEXT://kafka:9092,EXTERNAL://127.0.0.1:19094"
           export KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP="CONTROLLER:PLAINTEXT,EXTERNAL:SASL_PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT"
           export KAFKA_CFG_SASL_ENABLED_MECHANISMS="PLAIN"
           export KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL="PLAIN"
