@@ -1,5 +1,4 @@
 # Grafana 数据源：通过 Docker 服务名访问（Grafana 与监控组件同属 openim 网络）
-# Prometheus 若仍用 host 网络，则通过 host.docker.internal 访问
 apiVersion: 1
 
 datasources:
@@ -7,7 +6,7 @@ datasources:
     type: prometheus
     uid: prometheus
     access: proxy
-    url: http://host.docker.internal:19090
+    url: http://prometheus:9090
     isDefault: true
     editable: false
 

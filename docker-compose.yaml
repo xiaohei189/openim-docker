@@ -272,6 +272,8 @@ services:
     user: root
     profiles:
       - m
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./config/instance-down-rules.yml:/etc/prometheus/instance-down-rules.yml
@@ -279,8 +281,9 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--web.listen-address=:${PROMETHEUS_PORT}"
-    network_mode: host
+      - "--web.listen-address=:9090"
+    networks:
+      - openim
 
   alertmanager:
     image: ${ALERTMANAGER_IMAGE}
@@ -288,13 +291,16 @@ services:
     restart: always
     profiles:
       - m
+    ports:
+      - "${ALERTMANAGER_PORT}:9093"
     volumes:
       - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - ./config/email.tmpl:/etc/alertmanager/email.tmpl
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
-      - "--web.listen-address=:${ALERTMANAGER_PORT}"
-    network_mode: host
+      - "--web.listen-address=:9093"
+    networks:
+      - openim
 
   grafana:
     image: ${GRAFANA_IMAGE}
