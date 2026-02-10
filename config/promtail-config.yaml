@@ -10,29 +10,16 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # 1. 指定目录下的 .log 文件，每行 JSON：{"timestamp":"...","level":"INFO","fields":{"message":"..."},"target":"..."}
-  # 路径为容器内：/logs = LOG_COLLECT_DIR（如 .../rust），实际日志在 rust/logs/ 下，故为 /logs/logs/rust.log*
+  # 1. 指定目录下的 .log 文件，直接采集原始日志内容，不进行解析
+  # 路径为容器内：/logs = LOG_COLLECT_DIR（如 /home/wps/opensource/flutter_rust_demo/rust/logs）
+  # 支持 Windows 和 Linux：通过环境变量 LOG_COLLECT_DIR 指定日志目录
   - job_name: rust-logs
     static_configs:
       - targets:
           - localhost
         labels:
           job: rust-logs
-          __path__: /logs/logs/rust.log*
-    pipeline_stages:
-      - json:
-          expressions:
-            level: level
-            message: fields.message
-            target: target
-            ts: timestamp
-      - timestamp:
-          source: ts
-          format: RFC3339Nano
-      - labels:
-          level: level
-      - output:
-          source: message
+          __path__: /logs/rust.log*
 
   # 2. openim-server、openim-chat 写入共享目录的日志文件（与下方 docker-compose 挂载一致）
   - job_name: openim-file-logs
