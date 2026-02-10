@@ -10,9 +10,10 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # 1. 指定目录下的 .log 文件，直接采集原始日志内容，不进行解析
+  # 1. 指定目录下的 .log 文件，提取时间戳和日志级别
   # 路径为容器内：/logs = LOG_COLLECT_DIR（如 /home/wps/opensource/flutter_rust_demo/rust/logs）
   # 支持 Windows 和 Linux：通过环境变量 LOG_COLLECT_DIR 指定日志目录
+  # 日志格式：2026-02-10T09:17:59.547349Z  INFO ...
   - job_name: rust-logs
     static_configs:
       - targets:
@@ -20,6 +21,19 @@ scrape_configs:
         labels:
           job: rust-logs
           __path__: /logs/rust.log*
+    pipeline_stages:
+      # 提取时间戳和日志级别
+      # 格式1：2026-02-10T09:17:59.547349Z  INFO  src/bin/im_client.rs:36 登录中: +86 17764338283
+      # 格式2：2026-02-10T09:17:59.557107Z DEBUG [2d93bec4ec93dbcad55ffc7e007d67a1]  src/im/client/message_handle.rs:178 ...
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2}T[\d:\.]+Z)\s+(?P<level>\w+)\s+(?P<message>.*)$'
+      # 设置时间戳
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      # 提取日志级别作为标签（用于过滤和查询）
+      - labels:
+          level: level
 
   # 2. openim-server、openim-chat 写入共享目录的日志文件（与下方 docker-compose 挂载一致）
   - job_name: openim-file-logs
