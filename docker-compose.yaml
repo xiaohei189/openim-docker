@@ -329,6 +329,7 @@ services:
   loki:
     image: ${LOKI_IMAGE}
     container_name: loki
+    user: root
     restart: always
     profiles:
       - m
@@ -366,7 +367,7 @@ services:
       - m
     volumes:
       - ./config/promtail-config.yaml:/etc/promtail/config.yaml
-      - ${LOG_COLLECT_DIR}:/logs:ro
+      - ./logs:/logs:ro
       - ${DATA_DIR}/components/openim-logs:/openim-logs:ro
       - ${DATA_DIR}/components/promtail/positions:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
