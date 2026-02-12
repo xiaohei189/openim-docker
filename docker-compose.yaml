@@ -342,20 +342,18 @@ services:
     networks:
       - openim
 
-  tempo:
-    image: ${TEMPO_IMAGE}
-    container_name: tempo
+  jaeger:
+    image: ${JAEGER_IMAGE}
+    container_name: jaeger
     restart: always
     profiles:
       - m
     ports:
-      - "${TEMPO_PORT}:3200"
+      - "${JAEGER_UI_PORT}:16686"
       - "4317:4317"
       - "4318:4318"
-    volumes:
-      - ./config/tempo-config.yaml:/etc/tempo.yaml
-      - ${DATA_DIR}/components/tempo:/var/tempo
-    command: -config.file=/etc/tempo.yaml
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     networks:
       - openim
 
