@@ -10,10 +10,9 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # 1. 指定目录下的 .log 文件，提取时间戳和日志级别
-  # 路径为容器内：/logs = LOG_COLLECT_DIR（如 /home/wps/opensource/flutter_rust_demo/rust/logs）
-  # 支持 Windows 和 Linux：通过环境变量 LOG_COLLECT_DIR 指定日志目录
-  # 日志格式：2026-02-10T09:17:59.547349Z  INFO ...
+  # 1. rust 日志：/logs = LOG_COLLECT_DIR，需在 .env 中指向实际含 rust.log* 的目录
+  # 若 LOG_COLLECT_DIR=.../rust（项目根），日志在 rust/logs/ 下 → 用 /logs/logs/rust.log*
+  # 若 LOG_COLLECT_DIR=.../rust/logs，日志直接在该目录 → 用 /logs/rust.log*
   - job_name: rust-logs
     static_configs:
       - targets:
@@ -21,6 +20,11 @@ scrape_configs:
         labels:
           job: rust-logs
           __path__: /logs/rust.log*
+      - targets:
+          - localhost
+        labels:
+          job: rust-logs
+          __path__: /logs/logs/rust.log*
     pipeline_stages:
       # 提取时间戳和日志级别
       # 格式1：2026-02-10T09:17:59.547349Z  INFO  src/bin/im_client.rs:36 登录中: +86 17764338283

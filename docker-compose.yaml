@@ -367,11 +367,8 @@ services:
       - m
     volumes:
       - ./config/promtail-config.yaml:/etc/promtail/config.yaml
-      # LOG_COLLECT_DIR: 日志收集目录，支持 Windows 和 Linux 路径
-      # Linux 示例: /home/wps/opensource/flutter_rust_demo/rust/logs
-      # Windows 示例: C:/Users/11456/workspace/flutter_rust_demo/rust/logs
-      # 如果未设置，将使用默认值（需要根据实际情况调整）
-      - ${LOG_COLLECT_DIR:-/home/wps/opensource/flutter_rust_demo/rust/logs}:/logs:ro
+      # LOG_COLLECT_DIR: 宿主机含 rust.log* 的目录；未设置时用项目内 ./rust-logs
+      - ${LOG_COLLECT_DIR:-./rust-logs}:/logs:ro
       - ${DATA_DIR}/components/openim-logs:/openim-logs:ro
       - ${DATA_DIR}/components/promtail/positions:/tmp
       - /var/run/docker.sock:/var/run/docker.sock
