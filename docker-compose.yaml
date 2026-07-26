@@ -248,14 +248,14 @@ services:
     networks:
       - openim
 
-  # openim-web-front:
-  #   image: ${OPENIM_WEB_FRONT_IMAGE}
-  #   container_name: openim-web-front
-  #   restart: always
-  #   ports:
-  #     - "${OPENIM_WEB_FRONT_PORT}:80"
-  #   networks:
-  #     - openim
+  openim-web-front:
+    image: ${OPENIM_WEB_FRONT_IMAGE}
+    container_name: openim-web-front
+    restart: always
+    ports:
+      - "${OPENIM_WEB_FRONT_PORT}:80"
+    networks:
+      - openim
 
   openim-admin-front:
      image: ${OPENIM_ADMIN_FRONT_IMAGE}
@@ -378,7 +378,7 @@ services:
 
   # openim-server: 两阶段构建本地源码 (build 阶段编译, runtime 阶段打包), 不用官方预编译镜像
   openim-server:
-    build: /home/weirui/workspace/open-im-server
+    build: ../open-im-server
     image: openim-server:local
     container_name: openim-server
     ports:
@@ -422,7 +422,7 @@ services:
 
   # openim-chat: 两阶段构建本地源码, 依赖 openim-server (check-component 调 server:10002)
   openim-chat:
-    build: /home/weirui/workspace/chat
+    build: ../chat
     image: openim-chat:local
     container_name: openim-chat
     ports:
